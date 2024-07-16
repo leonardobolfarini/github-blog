@@ -1,45 +1,50 @@
-import Markdown from 'react-markdown'
-import SyntaxHighlighter from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { useTheme } from 'styled-components'
-import { IssueContent } from './styles'
+import Markdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { IssueContent } from './styles';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface PostBodyProps {
-  body: string
+  body: string;
 }
 
-export const PostBody = ({ body }: PostBodyProps) => {
-  const colors = useTheme()
+export function PostBody({ body }: PostBodyProps) {
   return (
     <IssueContent>
+      
       <Markdown
         className="line-break"
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
         children={body}
         components={{
-          code({ children }) {
-            return (
+          code({ node, inline, className, children, ...props }: any) {
+            const match = /language-(\w+)/.exec(className || '');
+            return !inline && match ? (
               <SyntaxHighlighter
+                children={String(children).replace(/\n$/, '')}
+                style={atomDark}
+                language={match[1]}
                 PreTag="div"
-                children={String(children)}
-                style={{
-                  ...oneDark,
-                  'code[class*="language-"]': {
-                    width: '100%',
-                    ...oneDark['code[class*="language-"]'],
-                    backgroundColor: colors['base-post'],
-                    color: colors['base-text'],
-                  },
-                  'pre[class*="language-"]': {
-                    ...oneDark['code[class*="language-"]'],
-                    backgroundColor: colors['base-post'],
-                    color: colors['base-text'],
-                  },
-                }}
+                {...props}
               />
-            )
+            ) : (
+              <code
+                className={className}
+                style={{
+                  display: 'block',
+                  padding: '0.5em',
+                  borderRadius: '4px',
+                }}
+                {...props}
+              >
+                {children}
+              </code>
+            );
           },
         }}
       />
     </IssueContent>
-  )
+  );
 }
